@@ -15,69 +15,12 @@ import java.lang.reflect.Field;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
 @RunWith(JUnit4.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class SimpleTest {
-    private static final String indexName = safe_name("àlgol?à-java");
-
-    private static APIClient client;
-    private static Index index;
-
-
-    public static String safe_name(String name) {
-        if (System.getenv("TRAVIS") != null) {
-            String[] id = System.getenv("TRAVIS_JOB_NUMBER").split("\\.");
-            return name + "_travis" + id[id.length - 1];
-        }
-        return name;
-
-    }
-
-    public static boolean isPresent(JSONArray array, String search, String attr) throws JSONException {
-        boolean isPresent = false;
-        for (int i = 0; i < array.length(); ++i) {
-            isPresent = isPresent || array.getJSONObject(i).getString(attr).equals(search);
-        }
-        return isPresent;
-    }
-
-    private void waitForIt() {
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException ignored) {
-        }
-    }
-
-    @BeforeClass
-    public static void init() {
-        String applicationID = System.getenv("ALGOLIA_APPLICATION_ID");
-        String apiKey = System.getenv("ALGOLIA_API_KEY");
-        Assume.assumeFalse("You must set environement variables ALGOLIA_APPLICATION_ID and ALGOLIA_API_KEY to run the tests.", applicationID == null || apiKey == null);
-        client = new APIClient(applicationID, apiKey);
-        index = client.initIndex(indexName);
-    }
-
-    @AfterClass
-    public static void dispose() {
-        try {
-            client.deleteIndex(indexName);
-        } catch (AlgoliaException e) {
-            // Not fatal
-        }
-    }
-
-    @Before
-    public void eachInit() {
-        try {
-            index.clearIndex();
-        } catch (AlgoliaException e) {
-            //Normal
-        }
-    }
+public class SimpleTest extends AlgoliaTest {
 
     @Test
     public void test01_deleteIndexIfExists() {
@@ -202,8 +145,7 @@ public class SimpleTest {
 
     @Test
     public void test09_partialUpdateObjectNoCreate_whenObjectDoesNotExist() throws AlgoliaException, JSONException {
-        JSONObject task = task = index.partialUpdateObjectNoCreate(new JSONObject()
-                .put("firtname", "Jimmie"), "a/go/?à");
+        JSONObject task = index.partialUpdateObjectNoCreate(new JSONObject().put("firtname", "Jimmie"), "a/go/?à");
         index.waitTask(task.getString("taskID"));
         JSONObject res = index.search(new Query("jimie"));
         assertEquals(0, res.getInt("nbHits"));
